@@ -1,2 +1,3 @@
-# ansible-talos
-Ansible Collection for Talos Linux
+# Ansible Collection - theobassaw.talos
+
+Documentation for the collection.
