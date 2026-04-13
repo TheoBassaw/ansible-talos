@@ -57,10 +57,6 @@ options:
         type: list
         element: str
         required: true
-    siderov1_keys_dir:
-        description:
-            - The path to the SideroV1 auth PGP keys directory. Defaults to 'SIDEROV1_KEYS_DIR' env variable if set, otherwise '$HOME/.talos/keys'. Only valid for Contexts that use SideroV1 auth.
-        type: str
     talosconfig:
         description:
             - The path to the Talos configuration file. Defaults to 'TALOSCONFIG' env variable if set, otherwise '$HOME/.talos/config' and '/var/run/secrets/talos.dev/config' in order.
@@ -88,13 +84,9 @@ def run_module():
             insecure = dict(type = 'bool'),
             mode = dict(type = 'str', choices = ['auto', 'no-reboot', 'reboot', 'staged', 'try']),
             nodes = dict(type = 'list', elements = 'str', required = True),
-            siderov1_keys_dir = dict(type = 'path'),
             talosconfig = dict(type = 'path'),
             timeout = dict(type = 'str')
         ),
-        required_by = {
-            'timeout': 'mode'
-        },
         supports_check_mode=True,
     )
 
@@ -112,7 +104,6 @@ def run_module():
     insecure = module.params['insecure']
     mode = module.params['mode']
     nodes = module.params['nodes']
-    siderov1_keys_dir = module.params['siderov1_keys_dir']
     talosconfig = module.params['talosconfig']
     timeout = module.params['timeout']
 
@@ -149,10 +140,6 @@ def run_module():
         cmd.append("-n")
         cmd.append(item)
     
-    if siderov1_keys_dir:
-        cmd.append("--siderov1-keys-dir")
-        cmd.append(siderov1_keys_dir)
-    
     if talosconfig:
         cmd.append("--talosconfig")
         cmd.append(talosconfig)
@@ -163,6 +150,9 @@ def run_module():
 
     if module.check_mode:
         module.exit_json(**result)
+
+    if timeout and mode != 'try':
+        module.fail_json(msg="timeout can only be used with mode=try")
     
     cmd_diff = cmd.copy()
     cmd_diff.append("--dry-run")
