@@ -9,10 +9,6 @@ short_description: Generates a secrets bundle file which can later be used to ge
 description:
     - Generates a secrets bundle file which can later be used to generate a config.
 options:
-    encrypt:
-        description:
-            - encrypt the secrets with sops. Must have SOPS installed (https://github.com/getsops/sops)
-        type: bool
     force:
         description:
             - overwrite existing file
@@ -31,16 +27,17 @@ version_added: 0.2.0
 
 
 from ansible.module_utils.basic import AnsibleModule
+import os
 
 def run_module():
     module = AnsibleModule(
         argument_spec = dict(
-            encrypt = dict(type = 'bool'),
             force = dict(type = 'bool'),
             output_file = dict(type = 'path'),
+            output_type = dict(type = 'str', choices = ['file', 'stdout'], default = 'file'),
             talos_version = dict(type = 'str')
         ),
-        supports_check_mode=True,
+        supports_check_mode = True,
     )
 
     result = dict(
@@ -48,21 +45,33 @@ def run_module():
         message = ''
     )
 
-    encrypt = module.params['encrypt']
     force = module.params['force']
     output_file = module.params['output_file']
+    output_type = module.params['output_type']
     talos_version = module.params['talos_version']
 
-    cmd = ["talosctl", "gen", "secrets", "-o", "-"]
+    cmd = ["talosctl", "gen", "secrets"]
 
-
-
-    if rc_diff == 0 and "No changes." not in stderr_diff:
+    if output_type == 'file':
+        if output_file:
+            cmd.append("-o")
+            cmd.append(output_file)
+            if force:
+                cmd.append("-f")
+    else:
+        cmd.append("-")
         result['changed'] = True
 
-    rc, stdout, stderr = module.run_command(cmd)
+    if talos_version:
+        cmd.append("--talos-version")
+        cmd.append(talos_version)
+    
+    if os.path.exists:
+        rc, stdout, stderr = module.run_command(cmd)
+    else:
+        module.exit_json(**result)
 
-    if rc== 0:
+    if rc == 0:
         module.exit_json(**result)
     else:
         module.fail_json(msg = stderr, **result)

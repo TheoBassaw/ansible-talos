@@ -87,7 +87,7 @@ def run_module():
             talosconfig = dict(type = 'path'),
             timeout = dict(type = 'str')
         ),
-        supports_check_mode=True,
+        supports_check_mode = True,
     )
 
     result = dict(
@@ -164,14 +164,13 @@ def run_module():
 
     rc, stdout, stderr = module.run_command(cmd)
 
-    if rc== 0:
+    if rc == 0:
         module.exit_json(**result)
     else:
         module.fail_json(msg = stderr, **result)
 
 def main():
     run_module()
-
 
 if __name__ == '__main__':
     main()
