@@ -9,24 +9,23 @@ def run_module():
             cluster = dict(type = 'str'),
             context = dict(type = 'str'),
             endpoints = dict(type = 'list', elements = 'str'),
-            nodes = dict(type = 'list', elements = 'str', required = True),
+            node = dict(type = 'str', required = True),
             talosconfig = dict(type = 'path'),
         ),
         supports_check_mode = True,
     )
 
     result = dict(
-        changed = False,
-        message = ''
+        changed = False
     )
 
     cluster = module.params['cluster']
     context = module.params['context']
     endpoints = module.params['endpoints']
-    nodes = module.params['nodes']
+    node = module.params['node']
     talosconfig = module.params['talosconfig']
 
-    cmd = ["talosctl", "bootstrap"]
+    cmd = ["talosctl", "bootstrap", "-n", node]
 
     if cluster:
         cmd.append("-c")
@@ -39,10 +38,6 @@ def run_module():
     for item in endpoints or []:
         cmd.append("-e")
         cmd.append(item)
-
-    for item in nodes:
-        cmd.append("-n")
-        cmd.append(item)
     
     if talosconfig:
         cmd.append("--talosconfig")
@@ -51,13 +46,13 @@ def run_module():
     rc, stdout, stderr = module.run_command(cmd)
 
     if rc == 0:
+        result['changed'] = True
         module.exit_json(**result)
     else:
         module.fail_json(msg = stderr, **result)
 
 def main():
     run_module()
-
 
 if __name__ == '__main__':
     main()

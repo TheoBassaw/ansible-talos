@@ -27,13 +27,13 @@ version_added: 0.2.0
 
 
 from ansible.module_utils.basic import AnsibleModule
-import os
+from pathlib import Path
 
 def run_module():
     module = AnsibleModule(
         argument_spec = dict(
-            force = dict(type = 'bool'),
-            output_file = dict(type = 'path'),
+            force = dict(type = 'bool', default = False),
+            output_file = dict(type = 'path', default = "secrets.yaml"),
             output_type = dict(type = 'str', choices = ['file', 'stdout'], default = 'file'),
             talos_version = dict(type = 'str')
         ),
@@ -42,7 +42,7 @@ def run_module():
 
     result = dict(
         changed = False,
-        message = ''
+        output = ''
     )
 
     force = module.params['force']
@@ -52,33 +52,34 @@ def run_module():
 
     cmd = ["talosctl", "gen", "secrets"]
 
-    if output_type == 'file':
-        if output_file:
-            cmd.append("-o")
-            cmd.append(output_file)
-            if force:
-                cmd.append("-f")
-    else:
-        cmd.append("-")
-        result['changed'] = True
-
     if talos_version:
         cmd.append("--talos-version")
         cmd.append(talos_version)
-    
-    if os.path.exists:
-        rc, stdout, stderr = module.run_command(cmd)
-    else:
-        module.exit_json(**result)
 
-    if rc == 0:
-        module.exit_json(**result)
+    if output_type == 'file':
+        cmd.append("-o")
+        cmd.append(output_file)
+
+        if force:
+            cmd.append("-f")
     else:
-        module.fail_json(msg = stderr, **result)
+        cmd.append("-o")
+        cmd.append("-")
+    
+    if force or Path(output_file).exists == False or output_type == 'stdout':
+        rc, stdout, stderr = module.run_command(cmd)
+
+        if rc == 0:
+            result['changed'] = True
+            result['output'] = stderr
+            module.exit_json(**result)
+        else:
+            module.fail_json(msg = stderr, **result)
+    else:
+        module.exit_json(**result)
 
 def main():
     run_module()
-
 
 if __name__ == '__main__':
     main()
