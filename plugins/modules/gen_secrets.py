@@ -42,7 +42,7 @@ def run_module():
 
     result = dict(
         changed = False,
-        output = ''
+        kubeconfig = ''
     )
 
     force = module.params['force']
@@ -66,12 +66,12 @@ def run_module():
         cmd.append("-o")
         cmd.append("-")
     
-    if force or Path(output_file).exists == False or output_type == 'stdout':
+    if force or Path(output_file).exists() == False or output_type == 'stdout':
         rc, stdout, stderr = module.run_command(cmd)
 
         if rc == 0:
             result['changed'] = True
-            result['output'] = stderr
+            result['kubeconfig'] = stdout
             module.exit_json(**result)
         else:
             module.fail_json(msg = stderr, **result)

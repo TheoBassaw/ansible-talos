@@ -48,6 +48,8 @@ def run_module():
     if rc == 0:
         result['changed'] = True
         module.exit_json(**result)
+    elif "AlreadyExists" in stderr:
+        module.exit_json(**result)
     else:
         module.fail_json(msg = stderr, **result)
 
